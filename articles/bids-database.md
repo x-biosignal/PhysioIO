@@ -129,7 +129,7 @@ creates the `experiments`, `channels`, `events`, `signal_chunks`,
 db_path <- tempfile(fileext = ".duckdb")
 con <- connectDatabase(db_path)
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpeoRJTR/duckdb
+#> ℹ /tmp/RtmpD7LDjB/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
@@ -193,7 +193,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PhysioIO_0.2.2   PhysioCore_0.2.0
+#> [1] PhysioIO_0.2.3   PhysioCore_0.2.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] sass_0.4.10                 generics_0.1.4             

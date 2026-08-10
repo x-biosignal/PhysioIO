@@ -190,7 +190,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PhysioIO_0.2.2   PhysioCore_0.2.0 BiocStyle_2.40.0
+#> [1] PhysioIO_0.2.3   PhysioCore_0.2.0 BiocStyle_2.40.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] sass_0.4.10                 generics_0.1.4             

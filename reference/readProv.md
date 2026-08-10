@@ -37,9 +37,9 @@ tf <- tempfile(fileext = ".json")
 writeProv(pe, tf)
 readProv(tf)
 #>     step activity                            entity used generated
-#> 1 import   import pe:import@2026-08-08T05:58:37.571 <NA>      <NA>
+#> 1 import   import pe:import@2026-08-10T02:59:24.947 <NA>      <NA>
 #>                  agent   user package version       startedAtTime
-#> 1 runner@runnervmvrwv9 runner    <NA>    <NA> 2026-08-08 05:58:37
+#> 1 runner@runnervmvrwv9 runner    <NA>    <NA> 2026-08-10 02:59:24
 #>           endedAtTime           timestamp params params_json
-#> 1 2026-08-08 05:58:37 2026-08-08 05:58:37                 {}
+#> 1 2026-08-10 02:59:24 2026-08-10 02:59:24                 {}
 ```

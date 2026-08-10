@@ -1,5 +1,16 @@
 # Changelog
 
+## PhysioIO 0.2.3
+
+- [`readEDF()`](https://x-biosignal.github.io/PhysioIO/reference/readEDF.md)
+  and
+  [`readBrainVision()`](https://x-biosignal.github.io/PhysioIO/reference/readBrainVision.md)
+  now record a W3C-PROV provenance activity for the read (the DAG root),
+  capturing the source file path, so a loaded object carries its origin
+  and the read step is visible to the reproducibility substrate
+  run-tracing. This is separate from the existing on-disk provenance
+  serialization (io-prov.R). No change to parsing.
+
 ## PhysioIO 0.2.2
 
 ### Bug Fixes
