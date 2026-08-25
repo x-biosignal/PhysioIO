@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "PhysioIO: I/O Functions for PhysioExperiment Objects"
+type: software
+authors:
+  - family-names: Matsui
+    given-names: Yusuke
+    email: mail.to.matsui@gmail.com
+version: 0.2.0
+license: MIT
+repository-code: "https://github.com/x-biosignal/PhysioIO"
+url: "https://github.com/x-biosignal/PhysioIO"
+date-released: "2026-07-08"
+# doi: 10.5281/zenodo.XXXXXXX  # add Zenodo concept DOI once minted
+

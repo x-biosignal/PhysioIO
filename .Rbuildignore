@@ -1,0 +1,11 @@
+^CITATION\.cff$
+^codemeta\.json$
+^cran-comments\.md$
+^\.github$
+^_pkgdown\.yml$
+^pkgdown$
+^docs$
+^LICENSE\.md$
+^data-raw$
+^CONTRIBUTING\.md$
+^CODE_OF_CONDUCT\.md$

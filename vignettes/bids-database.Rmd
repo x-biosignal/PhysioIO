@@ -1,0 +1,153 @@
+---
+title: "BIDS Format Support and DuckDB Backend"
+author: "Yusuke Matsui"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{BIDS Format Support and DuckDB Backend}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+PhysioIO provides two complementary features for managing collections of
+physiological recordings:
+
+1. **BIDS support** -- read and write data in the Brain Imaging Data
+   Structure (BIDS) format, the community standard for organizing
+   neuroimaging and electrophysiology datasets.
+2. **DuckDB backend** -- store experiment metadata, channel information,
+   events, and (optionally) signal data in an embedded analytical
+   database for fast querying across many sessions.
+
+This vignette demonstrates both capabilities with self-contained,
+runnable examples that write to temporary locations.
+
+```{r load}
+library(PhysioIO)
+```
+
+We use a small deterministic object throughout.
+
+```{r make-pe}
+pe <- PhysioExperiment(
+  assays = list(raw = matrix(0, nrow = 200, ncol = 3)),
+  colData = S4Vectors::DataFrame(label = c("Fp1", "Fp2", "Cz")),
+  samplingRate = 256
+)
+pe
+```
+
+## BIDS format support
+
+### What is BIDS?
+
+The Brain Imaging Data Structure (BIDS) is a standard for organizing
+neuroimaging data into a consistent directory layout with machine-readable
+metadata files. PhysioIO supports the BIDS-EEG and BIDS-iEEG extensions.
+
+**Reference:** Gorgolewski KJ, et al. (2016). "The brain imaging data
+structure, a format for organizing and describing outputs of neuroimaging
+experiments." *Scientific Data*, 3, 160044.
+
+### Writing to and reading from a BIDS dataset
+
+`writeBIDS()` creates the required directory structure, writes the EDF
+data file, and generates the sidecar TSV and JSON files. `readBIDS()`
+loads it back, merging information from the companion sidecars.
+
+```{r bids-roundtrip}
+bids_root <- tempfile("bids")
+dir.create(bids_root)
+
+writeBIDS(pe, bids_root, subject = "01", task = "rest")
+
+# Read a single recording back
+pe_bids <- readBIDS(bids_root, subject = "01", task = "rest")
+dim(pe_bids)
+```
+
+### Exploring and validating a BIDS dataset
+
+```{r bids-explore}
+# List all subjects
+listBIDSSubjects(bids_root)
+
+# Validate BIDS compliance
+result <- validateBIDS(bids_root)
+result$valid
+result$n_subjects
+```
+
+The validator checks for `dataset_description.json`, subject directory
+naming, modality directories, and required metadata fields.
+
+```{r bids-cleanup}
+unlink(bids_root, recursive = TRUE)
+```
+
+## DuckDB database backend
+
+### Why use a database?
+
+When a study involves dozens or hundreds of recording sessions, it
+becomes impractical to load every file just to find which subjects had a
+particular task or which recordings fall within a date range. The DuckDB
+backend lets you register experiment metadata once and query it
+efficiently.
+
+**Reference:** Raasveldt M, Muehleisen H (2019). "DuckDB: an embeddable
+analytical database." Proceedings of the 2019 International Conference on
+Management of Data (SIGMOD).
+
+The chunks below evaluate only when the optional `duckdb` package is
+available.
+
+### Connecting, initializing, registering, and querying
+
+`initPhysioSchema()` creates the `experiments`, `channels`, `events`,
+`signal_chunks`, `epochs`, and `annotations` tables.
+
+```{r db-workflow, eval = requireNamespace("duckdb", quietly = TRUE)}
+db_path <- tempfile(fileext = ".duckdb")
+con <- connectDatabase(db_path)
+initPhysioSchema(con)
+
+# Register metadata (and optionally signal data)
+registerExperiment(con, pe,
+  experiment_id = "demo1",
+  subject_id = "sub-01",
+  task = "rest",
+  store_signals = TRUE
+)
+
+# Query across sessions
+all_exps <- queryExperiments(con)
+sub01 <- queryExperiments(con, subject_id = "sub-01")
+
+# Reload a registered experiment
+pe_db <- loadExperiment(con, "demo1", load_signals = TRUE)
+dim(pe_db)
+
+# Summary statistics
+stats <- dbStats(con)
+stats$n_experiments
+
+# Remove and disconnect
+deleteExperiment(con, "demo1")
+disconnectDatabase(con)
+unlink(db_path)
+```
+
+## Session info
+
+```{r sessioninfo}
+sessionInfo()
+```

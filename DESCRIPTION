@@ -1,0 +1,67 @@
+Package: PhysioIO
+Title: Input and Output Functions for 'PhysioExperiment' Objects
+Version: 0.2.4
+Authors@R:
+    person(given = "Yusuke",
+           family = "Matsui",
+           role = c("aut", "cre"),
+           email = "mail.to.matsui@gmail.com")
+Description: Provides input and output capabilities for
+    'SummarizedExperiment'-derived physiological signal containers.
+    Supported formats include 'EDF' and 'EDF+', 'BDF', 'GDF',
+    'BrainVision', 'HDF5', 'BIDS', comma-separated values, and 'MATLAB'
+    files, together with 'DuckDB' database integration. Out-of-memory
+    processing of large datasets is available through delayed 'HDF5'
+    arrays.
+biocViews: Software, Infrastructure, DataImport, DataRepresentation
+Depends:
+    R (>= 4.2),
+    PhysioCore
+Imports:
+    methods,
+    SummarizedExperiment,
+    S4Vectors,
+    HDF5Array,
+    rhdf5,
+    jsonlite,
+    DBI,
+    stats,
+    digest
+Suggests:
+    duckdb,
+    arrow,
+    R.matlab,
+    jsonvalidate,
+    reticulate,
+    knitr,
+    rmarkdown,
+    BiocStyle,
+    testthat (>= 3.2.0)
+VignetteBuilder: knitr
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Collate:
+    'utils-provenance.R'
+    'io-readwrite.R'
+    'io-edf.R'
+    'io-hdf5.R'
+    'io-bids.R'
+    'io-bids-motion.R'
+    'io-prov.R'
+    'io-wfdb.R'
+    'io-bdf.R'
+    'io-fif.R'
+    'io-csv.R'
+    'io-clinical.R'
+    'io-matlab.R'
+    'io-brainvision.R'
+    'io-gdf.R'
+    'io-arrow.R'
+    'bridge-mne.R'
+    'db-interface.R'
+    'db-schema.R'
+    'zzz.R'
+RoxygenNote: 7.3.3
+URL: https://github.com/x-biosignal/PhysioIO, https://x-biosignal.r-universe.dev/PhysioIO, https://x-biosignal.github.io/PhysioIO/
+BugReports: https://github.com/x-biosignal/PhysioIO/issues

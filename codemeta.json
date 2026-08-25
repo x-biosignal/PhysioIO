@@ -1,0 +1,40 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "PhysioIO",
+  "name": "PhysioIO: I/O Functions for PhysioExperiment Objects",
+  "version": "0.2.0",
+  "description": "Provides comprehensive I/O capabilities for PhysioExperiment objects. Supports EDF/EDF+, HDF5, BIDS, CSV, MATLAB formats, and DuckDB database integration. Includes out-of-memory processing for large datasets via HDF5Array.",
+  "license": "https://spdx.org/licenses/MIT",
+  "codeRepository": "https://github.com/x-biosignal/PhysioIO",
+  "issueTracker": "https://github.com/x-biosignal/PhysioIO/issues",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "R"
+  },
+  "runtimePlatform": "R",
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Yusuke",
+      "familyName": "Matsui",
+      "email": "mail.to.matsui@gmail.com"
+    }
+  ],
+  "maintainer": [
+    {
+      "@type": "Person",
+      "givenName": "Yusuke",
+      "familyName": "Matsui",
+      "email": "mail.to.matsui@gmail.com"
+    }
+  ],
+  "developmentStatus": "active",
+  "keywords": [
+    "physiological-signals",
+    "rehabilitation",
+    "biosignal",
+    "biomechanics",
+    "R"
+  ]
+}

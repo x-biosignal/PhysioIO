@@ -1,0 +1,111 @@
+# Re-export PhysioCore
+import(PhysioCore)
+
+# I/O - RDS
+export(readPhysio)
+export(writePhysio)
+
+# I/O - EDF
+export(readEDF)
+export(writeEDF)
+
+# I/O - BDF
+export(readBDF)
+export(writeBDF)
+
+# I/O - HDF5
+export(readPhysioHDF5)
+export(writePhysioHDF5)
+export(isHDF5Backed)
+export(realizeHDF5)
+export(writeAssayHDF5)
+
+# I/O - BIDS
+export(readBIDS)
+export(writeBIDS)
+export(listBIDSSubjects)
+export(listBIDSSessions)
+export(validateBIDS)
+
+# I/O - BIDS motion / physio / derivatives
+export(writeBIDSMotion)
+export(readBIDSMotion)
+export(writeBIDSPhysio)
+export(readBIDSPhysio)
+export(attachBIDSPhysio)
+export(writeBIDSDerivative)
+export(readBIDSDerivatives)
+
+# I/O - Provenance (W3C PROV)
+export(writeProv)
+export(readProv)
+
+# I/O - Arrow / Parquet columnar + DuckDB
+export(writeParquet)
+export(readParquet)
+export(registerParquetAssay)
+
+# Interop - reticulate / MNE-Python bridge
+export(toMNE)
+export(fromMNE)
+export(hasMNE)
+export(pyMNEVersion)
+
+# I/O - WFDB (PhysioNet)
+export(readWFDB)
+export(writeWFDB)
+export(readWFDBAnnotation)
+export(writeWFDBAnnotation)
+export(listWFDBRecords)
+export(downloadPhysioNet)
+
+# I/O - BDF (BioSemi) triggers
+export(readBDFStatus)
+export(bdfTriggerEvents)
+
+# I/O - FIF (Elekta/Neuromag/MNE)
+export(readFIF)
+
+# I/O - CSV
+export(readCSV)
+export(writeCSV)
+export(readEventsCSV)
+export(writeEventsCSV)
+export(readElectrodePositionsCSV)
+export(writeElectrodePositionsCSV)
+export(readClinicalMetadataCSV)
+export(validateClinicalMetadata)
+export(mapClinicalCodes)
+
+# I/O - MATLAB
+export(readMAT)
+export(writeMAT)
+
+# I/O - BrainVision
+export(readBrainVision)
+export(writeBrainVision)
+
+# I/O - GDF
+export(readGDF)
+export(writeGDF)
+
+# Database
+export(connectDatabase)
+export(disconnectDatabase)
+export(initPhysioSchema)
+export(registerExperiment)
+export(queryExperiments)
+export(loadExperiment)
+export(deleteExperiment)
+export(dbStats)
+
+# Imports
+import(methods)
+importFrom(S4Vectors, DataFrame, SimpleList, metadata, "metadata<-")
+importFrom(SummarizedExperiment, SummarizedExperiment, assay, "assay<-",
+           assayNames, assays, "assays<-", rowData, "rowData<-", colData)
+importFrom(HDF5Array, HDF5Array)
+importFrom(rhdf5, h5createGroup, h5createDataset, h5write, h5read,
+           h5ls, h5delete)
+importFrom(jsonlite, toJSON, fromJSON)
+importFrom(DBI, dbConnect, dbDisconnect)
