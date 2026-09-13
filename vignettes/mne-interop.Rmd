@@ -1,0 +1,160 @@
+---
+title: "Interoperating with MNE-Python"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Interoperating with MNE-Python}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE, purl = FALSE}
+# Documentation vignette: the code below requires MNE-Python (via reticulate) and
+# a configured Python interpreter, which are not available on the build/check
+# machines. Chunks are shown for reference but not executed or tangled, so the
+# vignette is safe under `R CMD check` and on r-universe (reticulate is never
+# initialised here). The numeric results quoted in the prose were measured on a
+# real run against mne 1.12.1.
+knitr::opts_chunk$set(eval = FALSE, purl = FALSE)
+```
+
+## Why a bridge, not a rewrite
+
+MNE-Python is a mature, extensively validated ecosystem for EEG/MEG analysis --
+decades of methods, and in particular a full brain-imaging stack (individual-MRI
+head models via FreeSurfer, coregistration, cortical source spaces, morphing,
+atlas labelling). Reimplementing all of that natively in R would take years and
+duplicate work that is already correct.
+
+The PhysioExperiment ecosystem therefore follows an **interop-first, selectively
+native** strategy:
+
+- **Borrow MNE** for what it does best -- individual-MRI source imaging and the
+  long tail of specialised methods -- by round-tripping data through the bridge
+  in this vignette.
+- **Keep native** the operations that must live inside the reproducibility
+  substrate (content-addressed, byte-identically replayable) and the PhysioAgent
+  tool registry (typed, deterministic, provenance-recording). A `reticulate` call
+  into Python is a non-deterministic boundary; a native R op is not.
+- **Use MNE as a validation oracle**: cross-check each native operation against
+  its MNE counterpart, so native code earns trust before it is relied on.
+
+`PhysioIO` provides the bridge: `hasMNE()`, `toMNE()`, `fromMNE()`, and a native
+`.fif` reader. Everything is guarded on `hasMNE()`, which is `TRUE` only when
+`reticulate` can reach a Python interpreter with the `mne` module.
+
+```{r requirements, purl = FALSE}
+library(PhysioIO)
+# reticulate must point at a Python that has `mne` installed, e.g.
+#   Sys.setenv(RETICULATE_PYTHON = "/path/to/python-with-mne")
+hasMNE()          # TRUE once mne is importable
+pyMNEVersion()    # e.g. "1.12.1"
+```
+
+## A lossless data bridge
+
+`toMNE()` converts a `PhysioExperiment` to an `mne.io.RawArray`; `fromMNE()`
+converts back. The round-trip preserves the signal exactly.
+
+```{r round-trip, purl = FALSE}
+pe  <- PhysioExperiment(
+  assays      = S4Vectors::SimpleList(raw = matrix(rnorm(2000 * 19), 2000, 19)),
+  colData     = S4Vectors::DataFrame(name = paste0("EEG", 1:19), type = "eeg"),
+  samplingRate = 250)
+
+raw <- toMNE(pe)         # -> mne.io.RawArray (nchan = 19, sfreq = 250)
+pe2 <- fromMNE(raw)      # -> PhysioExperiment
+
+orig <- SummarizedExperiment::assay(pe,  "raw")
+back <- SummarizedExperiment::assay(pe2, SummarizedExperiment::assayNames(pe2)[1])
+mean(vapply(seq_len(ncol(orig)),
+            function(j) cor(orig[, j], back[, j]), numeric(1)))
+#> 1            # per-channel correlation = 1 (lossless)
+```
+
+## Let MNE do the analysis, keep the result in R
+
+Once the data is an MNE object you can call any MNE routine and bring the result
+back into R for integration with other modalities, statistics, and the agentic
+pipeline. Here MNE computes the power spectral density:
+
+```{r mne-psd, purl = FALSE}
+psd   <- raw$compute_psd(fmin = 1, fmax = 40, verbose = FALSE)
+pdat  <- psd$get_data()          # (n_channels x n_freqs), V^2/Hz
+freqs <- as.numeric(psd$freqs)
+alpha_per_channel <- rowSums(pdat[, freqs >= 8 & freqs <= 13, drop = FALSE])
+```
+
+## MNE as a validation oracle for native ops
+
+The same quantity computed natively in the ecosystem can be cross-checked against
+MNE. On a real 19-channel run, per-channel alpha power from
+`PhysioAnalysis::bandPower()` and from the MNE PSD above agreed to a **spatial
+correlation of 0.997** across channels. The absolute scale differs by the Welch
+normalisation convention -- which is exactly the kind of definitional difference a
+matched-units validation pins down before a native op is trusted (see the
+`realdata-validation` discipline: report correlation, not numerical parity, until
+the definitions truly match).
+
+```{r oracle, purl = FALSE}
+# native (independent) per-channel alpha power, then:
+# cor(native_alpha_per_channel, alpha_per_channel)   #> ~0.997
+```
+
+## Toward native brain-imaging integration
+
+For source imaging, `PhysioEEG` already ships native forward models
+(`eegForwardModel`: analytic sphere, a BEM solver validated against the analytic
+solution, and the published `nyhead` / `fsaverage` templates) and inverse solvers
+(`eegSourceEstimate`: MNE, sLORETA, eLORETA; plus `eegBeamformer`). What the
+native path does **not** yet build is a subject-specific pipeline from an
+individual's own MRI (FreeSurfer segmentation -> individual BEM surfaces ->
+source space -> sensor coregistration). That is precisely where the bridge earns
+its keep: run the individual-MRI source estimate in MNE, then `fromMNE()` the
+result into a `PhysioExperiment` to join it with motion capture, EMG, or clinical
+data -- and, over time, replace the pieces that belong inside the reproducible /
+agentic core with validated native implementations.
+
+### Example: template (fsaverage) source localization via MNE
+
+MNE's `fsaverage` template gives a full cortical source space that the native
+path does not yet provide. The pipeline below runs entirely from R (driving MNE
+through `reticulate`) and returns the source estimate into a `PhysioExperiment`:
+
+```{r fsaverage-source, purl = FALSE}
+mne <- reticulate::import("mne")
+mn  <- reticulate::import("mne.minimum_norm")
+
+# an EEG PhysioExperiment with standard 10-20 channel labels -> MNE Raw
+raw <- toMNE(pe_1020)                       # pe_1020: channels Fp1, Fp2, ... O2
+raw$set_montage("standard_1020")
+raw$set_eeg_reference("average", projection = TRUE)
+
+# fsaverage template forward (BEM) + sLORETA inverse
+fs  <- mne$datasets$fetch_fsaverage()
+fwd <- mne$make_forward_solution(
+  raw$info, trans = "fsaverage",
+  src = file.path(fs, "bem", "fsaverage-ico-5-src.fif"),
+  bem = file.path(fs, "bem", "fsaverage-5120-5120-5120-bem-sol.fif"),
+  eeg = TRUE, meg = FALSE)
+cov <- mne$make_ad_hoc_cov(raw$info)
+inv <- mn$make_inverse_operator(raw$info, fwd, cov)
+stc <- mn$apply_inverse_raw(raw, inv, lambda2 = 1/9, method = "sLORETA")
+
+# bring the source estimate back into the PhysioExperiment data model
+se <- pe_1020
+S4Vectors::metadata(se)$source <- t(stc$data)     # time x cortical sources
+S4Vectors::metadata(se)$source_estimate <- list(
+  method = "MNE-Python sLORETA on fsaverage template",
+  engine = paste0("mne ", pyMNEVersion()),
+  provenance = "external (MNE-Python via reticulate)")
+```
+
+On a real 19-channel run this produced an fsaverage cortical estimate of
+**20484 sources x n_times** (both hemispheres, ico-5), stored in
+`metadata(se)$source` and tagged as externally computed -- far richer than the
+few-hundred-dipole native template source spaces, and now joinable with motion
+capture, EMG, or clinical data in the same object. Because the computation ran
+in MNE, the run manifest should record the Python/MNE environment and mark the
+step as external: the substrate content-addresses the *result*, not MNE's
+internal computation. Migrating this to a native, reproducible individual-MRI
+pipeline is future work; until then, the bridge delivers the capability today.

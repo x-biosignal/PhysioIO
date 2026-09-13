@@ -1,0 +1,166 @@
+---
+title: "Guide to Supported File Formats"
+author: "Yusuke Matsui"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Guide to Supported File Formats}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+PhysioIO provides read and write support for the most common file formats
+used in physiological signal research. This vignette walks through each
+format, explains when to use it, and demonstrates the basic API using
+self-contained round-trips through temporary files.
+
+| Format | Read | Write | Package dependency |
+|--------|:----:|:-----:|:------------------:|
+| EDF/EDF+ | `readEDF()` | `writeEDF()` | (none -- built-in) |
+| HDF5 | `readPhysioHDF5()` | `writePhysioHDF5()` | rhdf5, HDF5Array |
+| CSV/TSV | `readCSV()` | `writeCSV()` | (none -- built-in) |
+| MATLAB .mat | `readMAT()` | `writeMAT()` | R.matlab |
+| RDS | `readPhysio()` | `writePhysio()` | (none -- built-in) |
+
+All readers return a `PhysioExperiment` object, so downstream analysis
+code is identical regardless of the input format.
+
+```{r load}
+library(PhysioIO)
+```
+
+## A small example object
+
+We build a small, deterministic `PhysioExperiment` in memory to use for
+every round-trip below. Using constant data keeps the vignette fully
+reproducible.
+
+```{r make-pe}
+n_time <- 200
+n_ch <- 3
+pe <- PhysioExperiment(
+  assays = list(raw = matrix(0, nrow = n_time, ncol = n_ch)),
+  colData = S4Vectors::DataFrame(label = c("Fp1", "Fp2", "Cz")),
+  samplingRate = 256
+)
+pe
+```
+
+## RDS (native R serialization)
+
+For quick save/restore within R, you can serialize a `PhysioExperiment`
+to an RDS file. This preserves all slots and metadata exactly and needs
+no extra dependency.
+
+```{r rds}
+tf <- tempfile(fileext = ".rds")
+writePhysio(pe, tf)
+pe_rds <- readPhysio(tf)
+identical(dim(pe_rds), dim(pe))
+unlink(tf)
+```
+
+## CSV / TSV
+
+CSV is the most portable format and is useful for small- to
+medium-sized datasets or for interoperability with spreadsheet software
+and Python/pandas.
+
+```{r csv}
+tf <- tempfile(fileext = ".csv")
+writeCSV(pe, tf)
+pe_csv <- readCSV(tf, sampling_rate = 256)
+dim(pe_csv)
+unlink(tf)
+```
+
+**Reference:** Wickham H (2014). "Tidy Data." *Journal of Statistical
+Software*, 59(10), 1--23.
+
+## EDF / EDF+
+
+European Data Format (EDF) is the *de facto* standard for polysomnography
+and clinical EEG recordings. EDF+ extends the original format with
+support for annotations and discontinuous recordings.
+
+```{r edf}
+tf <- tempfile(fileext = ".edf")
+writeEDF(pe, tf)
+pe_edf <- readEDF(tf)
+dim(pe_edf)
+unlink(tf)
+```
+
+**Reference:** Kemp B, et al. (1992). "A simple format for exchange of
+digitized polygraphic recordings." *Electroencephalography and Clinical
+Neurophysiology*, 82(5), 391--393.
+
+## HDF5
+
+HDF5 is ideal for large datasets because it supports chunked,
+compressed, out-of-memory storage. PhysioIO uses the Bioconductor
+`rhdf5` and `HDF5Array` packages so that the data can remain on disk
+while you operate on it.
+
+```{r hdf5, eval = requireNamespace("rhdf5", quietly = TRUE)}
+tf <- tempfile(fileext = ".h5")
+writePhysioHDF5(pe, tf)
+
+# Read back into memory
+pe_h5 <- readPhysioHDF5(tf, as_delayed = FALSE)
+
+# Keep data on disk (HDF5-backed / delayed)
+pe_lazy <- readPhysioHDF5(tf, as_delayed = TRUE)
+isHDF5Backed(pe_lazy)
+unlink(tf)
+```
+
+**Reference:** The HDF Group (1997--2024). "Hierarchical Data Format,
+version 5." <https://www.hdfgroup.org/HDF5/>
+
+## MATLAB .mat files
+
+PhysioIO can read and write MATLAB `.mat` files via the `R.matlab`
+package. Auto-detection logic handles common EEG toolbox conventions
+(EEGLAB, FieldTrip). The chunk below only evaluates when `R.matlab` is
+installed.
+
+```{r mat, eval = requireNamespace("R.matlab", quietly = TRUE)}
+tf <- tempfile(fileext = ".mat")
+writeMAT(pe, tf)
+pe_mat <- readMAT(tf)
+dim(pe_mat)
+unlink(tf)
+```
+
+**Reference:** MathWorks (2024). "MAT-File Format." Technical
+documentation.
+<https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>
+
+## Choosing a format
+
+| Scenario | Recommended format |
+|----------|--------------------|
+| Long-term archival or sharing | EDF or HDF5 |
+| Very large datasets (> 1 GB) | HDF5 (on-disk) |
+| Interoperability with Python | CSV or HDF5 |
+| Interoperability with MATLAB | .mat |
+| BIDS-compliant data sharing | BIDS (EDF underneath) |
+| Quick R-only save/restore | RDS |
+
+## Session info
+
+```{r sessioninfo}
+sessionInfo()
+```
