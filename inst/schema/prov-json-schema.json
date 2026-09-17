@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "W3C PROV-JSON",
+  "description": "JSON Schema encoding of the W3C PROV-JSON container grammar (Huynh, Jewell, Keshavarz, Michaelides, Yang & Moreau 2013).",
+  "type": "object",
+  "properties": {
+    "prefix": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": { "type": "object" }
+    },
+    "activity": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "prov:startTime": { "type": ["string", "null"] },
+          "prov:endTime": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": { "type": "object" }
+    },
+    "wasGeneratedBy": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "prov:entity": { "type": "string" },
+          "prov:activity": { "type": "string" }
+        },
+        "required": ["prov:entity", "prov:activity"]
+      }
+    },
+    "used": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "prov:activity": { "type": "string" },
+          "prov:entity": { "type": "string" }
+        },
+        "required": ["prov:activity", "prov:entity"]
+      }
+    },
+    "wasAssociatedWith": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "prov:activity": { "type": "string" },
+          "prov:agent": { "type": "string" }
+        },
+        "required": ["prov:activity", "prov:agent"]
+      }
+    },
+    "wasDerivedFrom": { "type": "object" },
+    "wasInformedBy": { "type": "object" },
+    "wasAttributedTo": { "type": "object" }
+  },
+  "additionalProperties": false
+}

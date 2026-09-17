@@ -1,0 +1,7 @@
+100 2 360 5000
+100.dat 212 200 11 1024 995 0 0 MLII
+100.dat 212 200 11 1024 1011 0 0 V5
+# excerpt: first 5000 samples of PhysioNet MIT-BIH Arrhythmia record 100
+# (ODC-By v1.0; Moody & Mark 2001, doi:10.13026/C2F305); original bare-gain
+# header style retained deliberately -- it regression-tests the header(5)
+# baseline-defaults-to-ADC-zero rule.
